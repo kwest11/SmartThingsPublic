@@ -1,5 +1,5 @@
 /**
- *  Check The Garage
+ *  Check The Sensor
  *
  *  Copyright 2019 Kody West
  *
@@ -14,10 +14,10 @@
  *
  */
 definition(
-    name: "Check The Garage",
+    name: "Check The Sensor",
     namespace: "kwest11",
     author: "Kody West",
-    description: "Checks the garage sensor at a certain time to determine if its closed.",
+    description: "Checks the state of a sensor at a certain time.",
     category: "Safety & Security",
     iconUrl: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png",
     iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png",
@@ -30,6 +30,7 @@ preferences {
   }
   section("Make sure it's closed..."){
     input "contact", "capability.contactSensor", title: "Which contact sensor?", required: true
+    input "sendIfClosed", "enum", title: "Send if closed?", metadata:[values:["Yes", "No"]], required: false
   }
   section( "Notifications" ) {
     input "sendPushMessage", "enum", title: "Send a push notification?", metadata:[values:["Yes", "No"]], required: false
@@ -38,6 +39,7 @@ preferences {
 }
 
 def installed() {
+  log.debug "Installed with settings: ${settings}"
   schedule(time, "setTimeCallback")
 }
 
@@ -56,15 +58,16 @@ def doorOpenCheck() {
   if (currentState?.value == "open") {
     def msg = "${contact.displayName} is open."
     log.debug msg
-    if (sendPushMessage) {
-      sendPush msg
-    }
-    if (phone) {
-      sendSms phone, msg
-    }
+	def sendNotification = "Y"
   } else {
     def msg = "${contact.displayName} is closed."
     log.debug msg
+    if (sendIfClosed == "Y") {
+      def sendNotification = "Y"
+    }
+  }
+  
+  if(sendNotification) {
     if (sendPushMessage) {
       sendPush msg
     }
@@ -72,4 +75,5 @@ def doorOpenCheck() {
       sendSms phone, msg
     }
   }
+  
 }
